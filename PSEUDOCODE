@@ -1,0 +1,84 @@
+Tmx::Map *_map = new Tmx::Map();
+_map->ParseFile("./Map Files/MainMap.tmx");
+
+//Load textures into cache
+//Tilelayers
+for (auto layer : _map->GetLayers())
+{
+	for (int y = 0; y < layer->GetHeight(); y++)
+	{
+		for (int x = 0; x < layer->GetWidth(); x++)
+		{
+			auto tileset = _map->FindTileset(layer->GetTileId(x, y));
+			auto image = tileset->GetImage();
+			auto source = image->GetSource();
+			if (loadedImages.find(source) == loadedImages.end())
+			{
+				cout << "Loading texture " << source.substr(source.rfind("/") + 1) << endl;
+				auto text = new Gwen::Texture();
+				text->Load("Tilesets/" + source.substr(source.rfind("/") + 1), pRenderer);
+				textures.push_back(text);
+				loadedImages.insert(pair<string, Gwen::Texture*>(source, text));
+			}
+		}
+	}
+}
+
+//Objectlayers
+for (auto objectGroup : _map->GetObjectGroups())
+{
+	for (auto object : objectGroup->GetObjects())
+	{
+		auto tileset = _map->FindTileset(object->GetId());
+		auto image = tileset->GetImage();
+		auto source = image->GetSource();
+		if (loadedImages.find(source) == loadedImages.end())
+		{
+			cout << "Loading texture " << source.substr(source.rfind("/") + 1) << endl;
+			auto text = new Gwen::Texture();
+			text->Load("Tilesets/" + source.substr(source.rfind("/") + 1), pRenderer);
+			textures.push_back(text);
+			loadedImages.insert(pair<string, Gwen::Texture*>(source, text));
+		}
+	}
+}
+
+while(!quit)
+{
+	// ...
+	// Event loop
+	// ...
+	
+	for (auto layer : _map->GetLayers())
+	{
+		for (int y = 0; y < layer->GetHeight(); y++)
+		{
+			for (int x = 0; x < layer->GetWidth(); x++)
+			{
+				auto tileset = _map->FindTileset(layer->GetTileId(x, y));
+				auto image = tileset->GetImage();
+				auto source = image->GetSource();
+				int tempX = layer->GetTileId(x, y) % (image->GetWidth() / tileset->GetTileWidth());
+				int tempY = layer->GetTileId(x, y) / (image->GetWidth() / tileset->GetTileWidth());
+				pRenderer->DrawTexturedRect(loadedImages[source], Gwen::Rect(x * tileset->GetTileWidth() - camX, y * tileset->GetTileHeight() - camY, tileset->GetTileWidth(), tileset->GetTileHeight()), Gwen::Rect(tempX * tileset->GetTileWidth(), tempY * tileset->GetTileHeight(), tileset->GetTileWidth(), tileset->GetTileHeight()));
+			}
+		}
+	}
+
+	//Objectlayers
+	for (auto objectGroup : _map->GetObjectGroups())
+	{
+		for (auto object : objectGroup->GetObjects())
+		{
+			auto tileset = _map->FindTileset(object->GetId());
+			auto image = tileset->GetImage();
+			auto source = image->GetSource();
+
+			int actualGid = object->GetId();
+
+			int tempX = (object->GetId() - tileset->GetFirstGid()) % (image->GetWidth() / tileset->GetTileWidth());
+			int tempY = (object->GetId() - tileset->GetFirstGid()) / (image->GetWidth() / tileset->GetTileWidth());
+			pRenderer->DrawTexturedRect(loadedImages[source], Gwen::Rect(object->GetX() - camX, object->GetY() - camY, tileset->GetTileWidth(), tileset->GetTileHeight()), Gwen::Rect(tempX * tileset->GetTileWidth(), tempY * tileset->GetTileHeight(), tileset->GetTileWidth(), tileset->GetTileHeight()));
+		}
+	}
+}
